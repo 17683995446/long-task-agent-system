@@ -1,0 +1,41 @@
+# Docker Compose配置
+# LongTaskAgent Docker Compose
+
+version: '3.8'
+
+services:
+  longtask-agent:
+    build: .
+    container_name: longtask-agent
+    ports:
+      - "8080:8080"
+    environment:
+      - LONG_TASK_AGENT_ENV=production
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # 可选：监控服务
+  monitoring:
+    build: .
+    container_name: longtask-monitoring
+    command: python -m cli.main monitor
+    ports:
+      - "8081:8080"
+    environment:
+      - LONG_TASK_AGENT_ENV=production
+    depends_on:
+      - longtask-agent
+    restart: unless-stopped
+
+networks:
+  default:
+    name: longtask-network
